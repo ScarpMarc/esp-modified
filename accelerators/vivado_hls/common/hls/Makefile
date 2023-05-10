@@ -8,7 +8,7 @@ HLS_TCL=common.tcl
 all: hls
 
 hls: 
-	@vivado_hls -f $(HLS_TCL)
+	@vitis_hls -f $(HLS_TCL)
 
 install:
 	@mkdir -p $(RTL_OUT)
@@ -16,9 +16,20 @@ ifneq ("$(TARGET_NAME)","")
 	@NAME_SHORT=$(TARGET_NAME:_vivado=); \
 	cp ../$$NAME_SHORT.xml $(RTL_OUT)/$(TARGET_NAME).xml; \
 	for prj in $(TARGET_NAME)_*; do \
+		echo ; \
 		echo $$prj; \
+		echo $$NAME_SHORT; \
+		echo $(TARGET_NAME)_*; \
+		echo $(RTL_OUT)/$(TARGET_NAME).xml; \
+		echo ; \
 		PRJ_NAME=$$prj; \
+		echo $$PRJ_NAME/$(TARGET_NAME)_acc/impl/ip/hdl/verilog/*; \
+		echo ; \
 		mkdir -p $(RTL_OUT)/$$PRJ_NAME; \
+		echo $(RTL_OUT)/$$PRJ_NAME; \
+		echo ; \
+		echo $$PRJ_NAME/$(TARGET_NAME)_acc/impl/ip/hdl/verilog/* "->" $(RTL_OUT)/$$PRJ_NAME; \
+		echo ;\
 		cp $$PRJ_NAME/$(TARGET_NAME)_acc/impl/ip/hdl/verilog/* $(RTL_OUT)/$$PRJ_NAME; \
 		if [ -e $$PRJ_NAME/$(TARGET_NAME)_acc/impl/ip/hdl/ip ]; then \
 			if [ -z $(ls -A $$PRJ_NAME/$(TARGET_NAME)_acc/impl/ip/hdl/ip) ]; then \
