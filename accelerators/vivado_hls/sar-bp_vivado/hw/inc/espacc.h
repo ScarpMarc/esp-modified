@@ -40,6 +40,15 @@ typedef float word_t;
 typedef ap_int<DATA_BITWIDTH> word_t;
 #endif
 
+typedef struct complex {
+	float real_part;
+	float imaginary_part;
+} complex_t;
+
+typedef struct position {
+	float x, y, z;
+} position_t;
+
 typedef struct dma_word {
     word_t word[VALUES_PER_WORD];
 } dma_word_t;
@@ -73,8 +82,8 @@ typedef struct dma_info {
 
 void top(dma_word_t *out, dma_word_t *in1,
 	/* <<--params-->> */
-	 const unsigned conf_info_n_range,
-	 const unsigned conf_info_n_out,
+	 const unsigned conf_info_n_range_bins,
+	 const unsigned conf_info_out_size,
 	 const unsigned conf_info_n_pulses,
 	 dma_info_t &load_ctrl, dma_info_t &store_ctrl);
 

@@ -19,8 +19,8 @@ static int validate_buffer(token_t *out, token_t *gold)
 	int j;
 	unsigned errors = 0;
 
-	for (i = 0; i < n_range; i++)
-		for (j = 0; j < 2*n_out; j++)
+	for (i = 0; i < 1; i++)
+		for (j = 0; j < (out_size * 2) * (out_size * 2); j++)
 			if (gold[i * out_words_adj + j] != out[i * out_words_adj + j])
 				errors++;
 
@@ -34,12 +34,12 @@ static void init_buffer(token_t *in, token_t * gold)
 	int i;
 	int j;
 
-	for (i = 0; i < n_range; i++)
-		for (j = 0; j < 2*n_pulses*(n_range+2); j++)
+	for (i = 0; i < 1; i++)
+		for (j = 0; j < n_pulses * ((n_range_bins*2)+3); j++)
 			in[i * in_words_adj + j] = (token_t) j;
 
-	for (i = 0; i < n_range; i++)
-		for (j = 0; j < 2*n_out; j++)
+	for (i = 0; i < 1; i++)
+		for (j = 0; j < (out_size * 2) * (out_size * 2); j++)
 			gold[i * out_words_adj + j] = (token_t) j;
 }
 
@@ -48,14 +48,14 @@ static void init_buffer(token_t *in, token_t * gold)
 static void init_parameters()
 {
 	if (DMA_WORD_PER_BEAT(sizeof(token_t)) == 0) {
-		in_words_adj = 2*n_pulses*(n_range+2);
-		out_words_adj = 2*n_out;
+		in_words_adj = n_pulses * ((n_range_bins*2)+3);
+		out_words_adj = (out_size * 2) * (out_size * 2);
 	} else {
-		in_words_adj = round_up(2*n_pulses*(n_range+2), DMA_WORD_PER_BEAT(sizeof(token_t)));
-		out_words_adj = round_up(2*n_out, DMA_WORD_PER_BEAT(sizeof(token_t)));
+		in_words_adj = round_up(n_pulses * ((n_range_bins*2)+3), DMA_WORD_PER_BEAT(sizeof(token_t)));
+		out_words_adj = round_up((out_size * 2) * (out_size * 2), DMA_WORD_PER_BEAT(sizeof(token_t)));
 	}
-	in_len = in_words_adj * (n_range);
-	out_len =  out_words_adj * (n_range);
+	in_len = in_words_adj * (1);
+	out_len =  out_words_adj * (1);
 	in_size = in_len * sizeof(token_t);
 	out_size = out_len * sizeof(token_t);
 	out_offset = in_len;
@@ -81,8 +81,8 @@ int main(int argc, char **argv)
 
 	printf("\n====== %s ======\n\n", cfg_000[0].devname);
 	/* <<--print-params-->> */
-	printf("  .n_range = %d\n", n_range);
-	printf("  .n_out = %d\n", n_out);
+	printf("  .n_range_bins = %d\n", n_range_bins);
+	printf("  .out_size = %d\n", out_size);
 	printf("  .n_pulses = %d\n", n_pulses);
 	printf("\n  ** START **\n");
 

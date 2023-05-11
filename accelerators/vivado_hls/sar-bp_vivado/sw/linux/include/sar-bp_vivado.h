@@ -20,8 +20,8 @@
 struct sar-bp_vivado_access {
 	struct esp_access esp;
 	/* <<--regs-->> */
-	unsigned n_range;
-	unsigned n_out;
+	unsigned n_range_bins;
+	unsigned out_size;
 	unsigned n_pulses;
 	unsigned src_offset;
 	unsigned dst_offset;

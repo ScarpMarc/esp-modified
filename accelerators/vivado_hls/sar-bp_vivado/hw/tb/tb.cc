@@ -12,8 +12,8 @@ int main(int argc, char **argv) {
     printf("****start*****\n");
 
     /* <<--params-->> */
-	 const unsigned n_range = 1024;
-	 const unsigned n_out = 1024;
+	 const unsigned n_range_bins = 8192;
+	 const unsigned out_size = 1024;
 	 const unsigned n_pulses = 1024;
 
     uint32_t in_words_adj;
@@ -25,10 +25,10 @@ int main(int argc, char **argv) {
     uint32_t dma_size;
 
 
-    in_words_adj = round_up(2*n_pulses*(n_range+2), VALUES_PER_WORD);
-    out_words_adj = round_up(2*n_out, VALUES_PER_WORD);
-    in_size = in_words_adj * (n_range);
-    out_size = out_words_adj * (n_range);
+    in_words_adj = round_up(n_pulses * ((n_range_bins*2)+3), VALUES_PER_WORD);
+    out_words_adj = round_up((out_size * 2) * (out_size * 2), VALUES_PER_WORD);
+    in_size = in_words_adj * (1);
+    out_size = out_words_adj * (1);
 
     dma_in_size = in_size / VALUES_PER_WORD;
     dma_out_size = out_size / VALUES_PER_WORD;
@@ -42,8 +42,8 @@ int main(int argc, char **argv) {
     dma_info_t store;
 
     // Prepare input data
-    for(unsigned i = 0; i < n_range; i++)
-        for(unsigned j = 0; j < 2*n_pulses*(n_range+2); j++)
+    for(unsigned i = 0; i < 1; i++)
+        for(unsigned j = 0; j < n_pulses * ((n_range_bins*2)+3); j++)
             inbuff[i * in_words_adj + j] = (word_t) j;
 
     for(unsigned i = 0; i < dma_in_size; i++)
@@ -51,16 +51,16 @@ int main(int argc, char **argv) {
 	    mem[i].word[k] = inbuff[i * VALUES_PER_WORD + k];
 
     // Set golden output
-    for(unsigned i = 0; i < n_range; i++)
-        for(unsigned j = 0; j < 2*n_out; j++)
+    for(unsigned i = 0; i < 1; i++)
+        for(unsigned j = 0; j < (out_size * 2) * (out_size * 2); j++)
             outbuff_gold[i * out_words_adj + j] = (word_t) j;
 
 
     // Call the TOP function
     top(mem, mem,
         /* <<--args-->> */
-	 	 n_range,
-	 	 n_out,
+	 	 n_range_bins,
+	 	 out_size,
 	 	 n_pulses,
         load, store);
 
@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
 	    outbuff[i * VALUES_PER_WORD + k] = mem[out_offset + i].word[k];
 
     int errors = 0;
-    for(unsigned i = 0; i < n_range; i++)
-        for(unsigned j = 0; j < 2*n_out; j++)
+    for(unsigned i = 0; i < 1; i++)
+        for(unsigned j = 0; j < (out_size * 2) * (out_size * 2); j++)
 	    if (outbuff[i * out_words_adj + j] != outbuff_gold[i * out_words_adj + j])
 		errors++;
 

@@ -9,13 +9,13 @@
 typedef int32_t token_t;
 
 /* <<--params-def-->> */
-#define N_RANGE 1024
-#define N_OUT 1024
+#define N_RANGE_BINS 8192
+#define OUT_SIZE 1024
 #define N_PULSES 1024
 
 /* <<--params-->> */
-const int32_t n_range = N_RANGE;
-const int32_t n_out = N_OUT;
+const int32_t n_range_bins = N_RANGE_BINS;
+const int32_t out_size = OUT_SIZE;
 const int32_t n_pulses = N_PULSES;
 
 #define NACC 1
@@ -23,8 +23,8 @@ const int32_t n_pulses = N_PULSES;
 struct sar-bp_vivado_access sar-bp_cfg_000[] = {
 	{
 		/* <<--descriptor-->> */
-		.n_range = N_RANGE,
-		.n_out = N_OUT,
+		.n_range_bins = N_RANGE_BINS,
+		.out_size = OUT_SIZE,
 		.n_pulses = N_PULSES,
 		.src_offset = 0,
 		.dst_offset = 0,

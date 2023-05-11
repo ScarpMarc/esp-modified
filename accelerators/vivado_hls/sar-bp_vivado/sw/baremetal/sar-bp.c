@@ -22,8 +22,8 @@ static unsigned DMA_WORD_PER_BEAT(unsigned _st)
 #define DEV_NAME "sld,sar-bp_vivado"
 
 /* <<--params-->> */
-const int32_t n_range = 1024;
-const int32_t n_out = 1024;
+const int32_t n_range_bins = 8192;
+const int32_t out_size = 1024;
 const int32_t n_pulses = 1024;
 
 static unsigned in_words_adj;
@@ -44,8 +44,8 @@ static unsigned mem_size;
 
 /* User defined registers */
 /* <<--regs-->> */
-#define SAR-BP_N_RANGE_REG 0x48
-#define SAR-BP_N_OUT_REG 0x44
+#define SAR-BP_N_RANGE_BINS_REG 0x48
+#define SAR-BP_OUT_SIZE_REG 0x44
 #define SAR-BP_N_PULSES_REG 0x40
 
 
@@ -55,8 +55,8 @@ static int validate_buf(token_t *out, token_t *gold)
 	int j;
 	unsigned errors = 0;
 
-	for (i = 0; i < n_range; i++)
-		for (j = 0; j < 2*n_out; j++)
+	for (i = 0; i < 1; i++)
+		for (j = 0; j < (out_size * 2) * (out_size * 2); j++)
 			if (gold[i * out_words_adj + j] != out[i * out_words_adj + j])
 				errors++;
 
@@ -69,12 +69,12 @@ static void init_buf (token_t *in, token_t * gold)
 	int i;
 	int j;
 
-	for (i = 0; i < n_range; i++)
-		for (j = 0; j < 2*n_pulses*(n_range+2); j++)
+	for (i = 0; i < 1; i++)
+		for (j = 0; j < n_pulses * ((n_range_bins*2)+3); j++)
 			in[i * in_words_adj + j] = (token_t) j;
 
-	for (i = 0; i < n_range; i++)
-		for (j = 0; j < 2*n_out; j++)
+	for (i = 0; i < 1; i++)
+		for (j = 0; j < (out_size * 2) * (out_size * 2); j++)
 			gold[i * out_words_adj + j] = (token_t) j;
 }
 
@@ -94,14 +94,14 @@ int main(int argc, char * argv[])
 	unsigned coherence;
 
 	if (DMA_WORD_PER_BEAT(sizeof(token_t)) == 0) {
-		in_words_adj = 2*n_pulses*(n_range+2);
-		out_words_adj = 2*n_out;
+		in_words_adj = n_pulses * ((n_range_bins*2)+3);
+		out_words_adj = (out_size * 2) * (out_size * 2);
 	} else {
-		in_words_adj = round_up(2*n_pulses*(n_range+2), DMA_WORD_PER_BEAT(sizeof(token_t)));
-		out_words_adj = round_up(2*n_out, DMA_WORD_PER_BEAT(sizeof(token_t)));
+		in_words_adj = round_up(n_pulses * ((n_range_bins*2)+3), DMA_WORD_PER_BEAT(sizeof(token_t)));
+		out_words_adj = round_up((out_size * 2) * (out_size * 2), DMA_WORD_PER_BEAT(sizeof(token_t)));
 	}
-	in_len = in_words_adj * (n_range);
-	out_len = out_words_adj * (n_range);
+	in_len = in_words_adj * (1);
+	out_len = out_words_adj * (1);
 	in_size = in_len * sizeof(token_t);
 	out_size = out_len * sizeof(token_t);
 	out_offset  = in_len;
@@ -177,8 +177,8 @@ int main(int argc, char * argv[])
 
 			// Pass accelerator-specific configuration parameters
 			/* <<--regs-config-->> */
-		iowrite32(dev, SAR-BP_N_RANGE_REG, n_range);
-		iowrite32(dev, SAR-BP_N_OUT_REG, n_out);
+		iowrite32(dev, SAR-BP_N_RANGE_BINS_REG, n_range_bins);
+		iowrite32(dev, SAR-BP_OUT_SIZE_REG, out_size);
 		iowrite32(dev, SAR-BP_N_PULSES_REG, n_pulses);
 
 			// Flush (customize coherence model here)

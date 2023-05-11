@@ -13,8 +13,8 @@
 #define DRV_NAME	"sar-bp_vivado"
 
 /* <<--regs-->> */
-#define SAR-BP_N_RANGE_REG 0x48
-#define SAR-BP_N_OUT_REG 0x44
+#define SAR-BP_N_RANGE_BINS_REG 0x48
+#define SAR-BP_OUT_SIZE_REG 0x44
 #define SAR-BP_N_PULSES_REG 0x40
 
 struct sar-bp_vivado_device {
@@ -48,8 +48,8 @@ static void sar-bp_prep_xfer(struct esp_device *esp, void *arg)
 	struct sar-bp_vivado_access *a = arg;
 
 	/* <<--regs-config-->> */
-	iowrite32be(a->n_range, esp->iomem + SAR-BP_N_RANGE_REG);
-	iowrite32be(a->n_out, esp->iomem + SAR-BP_N_OUT_REG);
+	iowrite32be(a->n_range_bins, esp->iomem + SAR-BP_N_RANGE_BINS_REG);
+	iowrite32be(a->out_size, esp->iomem + SAR-BP_OUT_SIZE_REG);
 	iowrite32be(a->n_pulses, esp->iomem + SAR-BP_N_PULSES_REG);
 	iowrite32be(a->src_offset, esp->iomem + SRC_OFFSET_REG);
 	iowrite32be(a->dst_offset, esp->iomem + DST_OFFSET_REG);
