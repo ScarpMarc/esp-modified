@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sld>
+  <accelerator name="sar-bp-naive" desc="Accelerator SAR-BP-NAIVE" data_size="289" device_id="77c" hls_tool="vivado_hls">
+    <param name="n_pulses" desc="n_pulses" />
+    <param name="out_size" desc="out_size" />
+    <param name="n_range_bins" desc="n_range_bins" />
+  </accelerator>
+</sld>

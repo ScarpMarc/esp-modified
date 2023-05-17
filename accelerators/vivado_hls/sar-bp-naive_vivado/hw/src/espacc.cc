@@ -15,8 +15,8 @@ void load(word_t _inbuff[SIZE_IN_CHUNK_DATA], dma_word_t *in1,
 {
 load_data:
 
-    const unsigned length = round_up(n_pulses * ((n_range_bins*2)+3), VALUES_PER_WORD) / n_pulses;
-    const unsigned index = length * (batch * n_pulses + chunk);
+    const unsigned length = round_up(n_pulses*((n_range_bins*2)+3), VALUES_PER_WORD) / 1;
+    const unsigned index = length * (batch * 1 + chunk);
 
     unsigned dma_length = length / VALUES_PER_WORD;
     unsigned dma_index = index / VALUES_PER_WORD;
@@ -41,10 +41,10 @@ void store(word_t _outbuff[SIZE_OUT_CHUNK_DATA], dma_word_t *out,
 {
 store_data:
 
-    const unsigned length = round_up((out_size * 2) * (out_size * 2), VALUES_PER_WORD) / n_pulses;
-    const unsigned store_offset = round_up(n_pulses * ((n_range_bins*2)+3), VALUES_PER_WORD) * 1;
+    const unsigned length = round_up(2*out_size*out_size, VALUES_PER_WORD) / 1;
+    const unsigned store_offset = round_up(n_pulses*((n_range_bins*2)+3), VALUES_PER_WORD) * 1;
     const unsigned out_offset = store_offset;
-    const unsigned index = out_offset + length * (batch * n_pulses + chunk);
+    const unsigned index = out_offset + length * (batch * 1 + chunk);
 
     unsigned dma_length = length / VALUES_PER_WORD;
     unsigned dma_index = index / VALUES_PER_WORD;
@@ -68,28 +68,55 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
 	 const unsigned n_pulses,
              word_t _outbuff[SIZE_OUT_CHUNK_DATA])
 {
-    /*
-        Compute single range bin and output the corresponding image pixel.
+    int p, ix, iy;
+    const double dR_inv = 1.0/dR;
 
-        DATA FORMAT:
-        First three bytes are the x, y, z coordinates of the platform; the rest
-        are the range bins. Each range bin is represented by two bytes, the
-        first of which is the real part and the second of which is the
-        imaginary part.
-    */
-    float platform_x = _inbuff[0];
-    float platform_y = _inbuff[1];
-    float platform_z = _inbuff[2];
-
-    complex_t in[n_range_bins];
-    for(unsigned int i = 0; i < n_range_bins; ++i) {
-        in[i].real_part = _inbuff[i+3];
-        in[i].imaginary_part = _inbuff[i+4];
-    }
-   
+    for (iy = 0; iy < BP_NPIX_Y; ++iy)
+    {
+        const double py = (-BP_NPIX_Y/2.0 + 0.5 + iy) * dxdy;
+        for (ix = 0; ix < BP_NPIX_X; ++ix)
+        {
+            complex accum;
+            const double px = (-BP_NPIX_X/2.0 + 0.5 + ix) * dxdy;
+            accum.real_part = accum.imaginary_part = 0.0f;
+            for (p = 0; p < N_PULSES; ++p)
+            {
+                /* calculate the range R from the platform to this pixel */
+                const double xdiff = platpos[p].x - px;
+                const double ydiff = platpos[p].y - py;
+                const double zdiff = platpos[p].z - z0;
+                const double R = sqrt(
+                    xdiff*xdiff + ydiff*ydiff + zdiff*zdiff);
+                /* convert to a range bin index */
+                const double bin = (R-R0)*dR_inv;
+                if (bin >= 0 && bin <= N_RANGE_UPSAMPLED-2)
+                {
+                    complex sample, matched_filter, prod;
+                    /* interpolation range is [bin_floor, bin_floor+1] */
+                    const int bin_floor = (int) bin;
+                    /* interpolation weight */
+                    const float w = (float) (bin - (double) bin_floor);
+                    /* linearly interpolate to obtain a sample at bin */
+                    sample.real_part = (1.0f-w)*upsampled_data[p][bin_floor].real_part + w*upsampled_data[p][bin_floor+1].real_part;
+                    sample.imaginary_part = (1.0f-w)*upsampled_data[p][bin_floor].imaginary_part + w*upsampled_data[p][bin_floor+1].imaginary_part;
+                    /* compute the complex exponential for the matched filter */
+                    matched_filter.real_part = cos(2.0 * ku * R);
+                    matched_filter.imaginary_part = sin(2.0 * ku * R);
+                    /* scale the interpolated sample by the matched filter */
+                    prod = cmult(sample, matched_filter);
+                    /* accumulate this pulse's contribution into the pixel */
+                    accum.real_part += prod.real_part;
+                    accum.imaginary_part += prod.imaginary_part;
+                }
+            }
+            //image[iy][ix] = accum;
+            _outbuff[iy * BP_NPIX_Y + ix] = accum.real_part;
+            _outbuff[iy * BP_NPIX_Y + ix + 1] = accum.imaginary_part;
+        }   // End for x
+    }       // End for y
 
     // TODO implement compute functionality
-    const unsigned length = round_up(n_pulses * ((n_range_bins*2)+3), VALUES_PER_WORD) / n_pulses;
+    const unsigned length = round_up(n_pulses*((n_range_bins*2)+3), VALUES_PER_WORD) / 1;
 
     for (int i = 0; i < length; i++)
         _outbuff[i] = _inbuff[i];
@@ -115,7 +142,7 @@ batching:
     {
         // Chunking
     go:
-        for (int c = 0; c < n_pulses; c++)
+        for (int c = 0; c < 1; c++)
         {
             word_t _inbuff[SIZE_IN_CHUNK_DATA];
             word_t _outbuff[SIZE_OUT_CHUNK_DATA];
