@@ -10,7 +10,7 @@
 #include <ap_int.h>
 
 #define __round_mask(x, y) ((y)-1)
-#define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
+#define round_up(x, y) ((((x)-1) | __round_mask(x, y)) + 1)
 
 // Data types and constants
 #define VALUES_PER_WORD (DMA_SIZE / DATA_BITWIDTH)
@@ -26,8 +26,8 @@
 #endif
 
 // data word
-#if (IS_TYPE_FIXED_POINT ==  1)
-typedef ap_fixed<DATA_BITWIDTH,DATA_BITWIDTH-FRAC_BITS> word_t;
+#if (IS_TYPE_FIXED_POINT == 1)
+typedef ap_fixed<DATA_BITWIDTH, DATA_BITWIDTH - FRAC_BITS> word_t;
 #elif (IS_TYPE_UINT == 1)
 typedef ap_uint<DATA_BITWIDTH> word_t;
 #elif (IS_TYPE_FLOAT == 1)
@@ -40,35 +40,39 @@ typedef float word_t;
 typedef ap_int<DATA_BITWIDTH> word_t;
 #endif
 
-typedef struct complex {
+typedef struct complex
+{
 	float real_part;
 	float imaginary_part;
 } complex_t;
 
-typedef struct position {
+typedef struct position
+{
 	float x, y, z;
 } position_t;
 
-typedef struct dma_word {
-    word_t word[VALUES_PER_WORD];
+typedef struct dma_word
+{
+	word_t word[VALUES_PER_WORD];
 } dma_word_t;
 
 typedef word_t in_data_word;
 typedef word_t out_data_word;
 
 // Ctrl
-typedef struct dma_info {
-    ap_uint<32> index;
-    ap_uint<32> length;
-    ap_uint<32> size;
+typedef struct dma_info
+{
+	ap_uint<32> index;
+	ap_uint<32> length;
+	ap_uint<32> size;
 } dma_info_t;
 
 // The 'size' variable of 'dma_info' indicates the bit-width of the words
 // processed by the accelerator. Here are the encodings:
-#define SIZE_BYTE   0
-#define SIZE_HWORD  1
-#define SIZE_WORD   2
-#define SIZE_DWORD  3
+#define SIZE_BYTE 0
+#define SIZE_HWORD 1
+#define SIZE_WORD 2
+#define SIZE_DWORD 3
 
 #if (DATA_BITWIDTH == 8)
 #define SIZE_WORD_T SIZE_BYTE
@@ -81,42 +85,57 @@ typedef struct dma_info {
 #endif
 
 void top(dma_word_t *out, dma_word_t *in1,
-	/* <<--params-->> */
-	 const unsigned conf_info_n_range_bins,
-	 const unsigned conf_info_out_size,
-	 const unsigned conf_info_n_pulses,
-	 dma_info_t &load_ctrl, dma_info_t &store_ctrl);
+		 /* <<--params-->> */
+		 const unsigned conf_info_n_range_bins,
+		 const unsigned conf_info_out_size,
+		 const unsigned conf_info_n_pulses,
+		 dma_info_t &load_ctrl, dma_info_t &store_ctrl);
 
 void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
-	     word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
+			 word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
 
 ////////////////////////////////////////
-//	PHYSICAL CONSTANTS  
+//	IMPLEMENTATION CONSTANTS
+//		TO BE READ FROM FILE
+//		(Defined in tb.cc for linker reasons)
+extern float fc, dR, R0;
+extern float dxdy; // = dR;
+extern float ku;	// = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
+
+////////////////////////////////////////
+//	PHYSICAL CONSTANTS
 //
 #define SPEED_OF_LIGHT (3.0e8)
 
 ////////////////////////////////////////
-//	IMPLEMENTATION CONSTANTS  
-//		TO BE READ FROM FILE
-//
-float fc, dR, R0;
-float dxdy; // = dR;
-float ku; // = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
-
-////////////////////////////////////////
-//	IMPLEMENTATION CONSTANTS  
+//	IMPLEMENTATION CONSTANTS
 //
 const float z0 = 0.0f;
 
 ////////////////////////////////////////
-//	OTHER CONSTANTS  
+//	OTHER CONSTANTS
 //
 #define MAX_DIR_AND_FILENAME_LEN (1024) // From kernel
+
+#define N_RANGE_BINS N_RANGE
 
 // These are for properly indexing the input array.
 // Data file format:
 //		fc, R0, dR, platpos, upsampled_data
-#define BUFFER_PLATFORM_POS_STARTING_IDX 3
-#define BUFFER_RANGE_BIN_STARTING_IDX BUFFER_PLATFORM_POS_STARTING_IDX + N_PULSES * 3
+
+// Start of the global elements
+#define BUFFER_PLATFORM_POS_STARTING_IDX (3)
+#define BUFFER_RANGE_BIN_STARTING_IDX (BUFFER_PLATFORM_POS_STARTING_IDX + N_PULSES * 3)
+
+// Sizes
+#define SINGLE_PULSE_DATA_SIZE (N_RANGE_BINS * 2) // Complex
+#define SINGLE_PLATFORM_POS_DATA_SIZE 3			  // x, y, z
+
+// Start of the idx-th element
+#define PARAM_FC_IDX 0
+#define PARAM_R0_IDX 1
+#define PARAM_dR_IDX 2
+#define PLATFORM_POS_STARTING_IDX(idx) BUFFER_PLATFORM_POS_STARTING_IDX + SINGLE_PLATFORM_POS_DATA_SIZE *idx
+#define RANGE_BIN_STARTING_IDX(idx) BUFFER_RANGE_BIN_STARTING_IDX + SINGLE_PULSE_DATA_SIZE *idx
 
 #endif

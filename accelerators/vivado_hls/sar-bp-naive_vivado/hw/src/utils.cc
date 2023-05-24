@@ -3,15 +3,15 @@
 complex cconj(complex x)
 {
     complex xconj = x;
-    xconj.im *= -1.0f;
+    xconj.imaginary_part *= -1.0f;
     return xconj;
 }
 
 complex cmult(complex lhs, complex rhs)
 {
     complex prod;
-    prod.re = lhs.re * rhs.re - lhs.im * rhs.im;
-    prod.im = lhs.re * rhs.im + lhs.im * rhs.re;
+    prod.real_part = lhs.real_part * rhs.real_part - lhs.imaginary_part * rhs.imaginary_part;
+    prod.imaginary_part = lhs.real_part * rhs.imaginary_part + lhs.imaginary_part * rhs.real_part;
     return prod;
 }
 

@@ -9,14 +9,17 @@
 #include <unistd.h>
 #include <cmath>
 
+float fc = 0.0f, dR = 0.0f, R0 = 0.0f;
+float dxdy = 0.0f; // = dR;
+float ku = 0.0f;	// = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
+
 void read_bp_data_file(
     const char *input_filename,
     const char *input_directory,
-    const std::array<complex, N_RANGE_UPSAMPLED>(*upsampled_data),
-    position *platpos,
-    double *fc,
-    double *R0,
-    double *dR)
+    float *buffer,
+    float *fc,
+    float *R0,
+    float *dR)
 {
     FILE *fp = NULL;
     const size_t num_data_elements = N_RANGE_UPSAMPLED * N_PULSES;
@@ -25,8 +28,7 @@ void read_bp_data_file(
 
     assert(input_filename != NULL);
     assert(input_directory != NULL);
-    assert(upsampled_data != NULL);
-    assert(platpos != NULL);
+    assert(buffer != NULL);
     assert(fc != NULL);
     assert(R0 != NULL);
     assert(dR != NULL);
@@ -65,14 +67,14 @@ void read_bp_data_file(
         exit(EXIT_FAILURE);
     }
 
-    if (fread(platpos, sizeof(position), N_PULSES, fp) != N_PULSES)
+    if (fread((void *)(buffer + BUFFER_PLATFORM_POS_STARTING_IDX), sizeof(position), N_PULSES, fp) != N_PULSES)
     {
         fprintf(stderr, "Error: Unable to read platform positions from %s.\n",
                 input_filename);
         exit(EXIT_FAILURE);
     }
 
-    if ((n = fread((void *)upsampled_data, sizeof(complex), num_data_elements, fp)) !=
+    if ((n = fread((void *)(buffer + BUFFER_RANGE_BIN_STARTING_IDX), sizeof(complex), num_data_elements, fp)) !=
         num_data_elements)
     {
         fprintf(stderr, "Error: Unable to read phase history data from %s.\n",
@@ -91,9 +93,6 @@ int main(int argc, char **argv)
     /*
         DEFINE SOME CONSTANTS
     */
-    dxdy = dR;
-    dR /= RANGE_UPSAMPLE_FACTOR;
-    ku = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
 
     /* <<--params-->> */
     const unsigned n_range_bins = 8192;
@@ -103,7 +102,7 @@ int main(int argc, char **argv)
     uint32_t in_words_adj;
     uint32_t out_words_adj;
     uint32_t in_size;
-    uint32_t out_size;
+    uint32_t out_size_;
     uint32_t dma_in_size;
     uint32_t dma_out_size;
     uint32_t dma_size;
@@ -111,18 +110,38 @@ int main(int argc, char **argv)
     in_words_adj = round_up(n_pulses * ((n_range_bins * 2) + 3), VALUES_PER_WORD);
     out_words_adj = round_up(2 * out_size * out_size, VALUES_PER_WORD);
     in_size = in_words_adj * (1);
-    out_size = out_words_adj * (1);
+    out_size_ = out_words_adj * (1);
 
     dma_in_size = in_size / VALUES_PER_WORD;
-    dma_out_size = out_size / VALUES_PER_WORD;
+    dma_out_size = out_size_ / VALUES_PER_WORD;
     dma_size = dma_in_size + dma_out_size;
 
     dma_word_t *mem = (dma_word_t *)malloc(dma_size * sizeof(dma_word_t));
     word_t *inbuff = (word_t *)malloc(in_size * sizeof(word_t));
-    word_t *outbuff = (word_t *)malloc(out_size * sizeof(word_t));
-    word_t *outbuff_gold = (word_t *)malloc(out_size * sizeof(word_t));
+    word_t *outbuff = (word_t *)malloc(out_size_ * sizeof(word_t));
+    word_t *outbuff_gold = (word_t *)malloc(out_size_ * sizeof(word_t));
     dma_info_t load;
     dma_info_t store;
+
+    /*read_bp_data_file(
+    const char *input_filename,
+    const char *input_directory,
+    const std::array<complex, N_RANGE_UPSAMPLED>(*upsampled_data),
+    double *fc,
+    double *R0,
+    double *dR)*/
+    read_bp_data_file(
+        "file_name",
+        "folder",
+        inbuff,
+        &fc,
+        &R0,
+        &dR
+    );
+
+    dxdy = dR;
+    dR /= RANGE_UPSAMPLE_FACTOR;
+    ku = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
 
     // Prepare input data
     for (unsigned i = 0; i < 1; i++)
@@ -135,14 +154,14 @@ int main(int argc, char **argv)
 
     // Set golden output
     for (unsigned i = 0; i < 1; i++)
-        for (unsigned j = 0; j < 2 * out_size * out_size; j++)
+        for (unsigned j = 0; j < 2 * out_size_ * out_size_; j++)
             outbuff_gold[i * out_words_adj + j] = (word_t)j;
 
     // Call the TOP function
     top(mem, mem,
         /* <<--args-->> */
         n_range_bins,
-        out_size,
+        out_size_,
         n_pulses,
         load, store);
 
@@ -154,7 +173,7 @@ int main(int argc, char **argv)
 
     int errors = 0;
     for (unsigned i = 0; i < 1; i++)
-        for (unsigned j = 0; j < 2 * out_size * out_size; j++)
+        for (unsigned j = 0; j < 2 * out_size_ * out_size_; j++)
             if (outbuff[i * out_words_adj + j] != outbuff_gold[i * out_words_adj + j])
                 errors++;
 

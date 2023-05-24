@@ -5,6 +5,7 @@
 #include "hls_stream.h"
 #include "hls_math.h"
 #include <cstring>
+#include "../inc/utils.h"
 
 void load(word_t _inbuff[SIZE_IN_CHUNK_DATA], dma_word_t *in1,
           /* <<--compute-params-->> */
@@ -60,7 +61,11 @@ store_data:
     }
 }
 
-
+/*
+    Here the input buffer is the concatenation of the two inputs the kernel would usually expect:
+    - platpos
+    - upsampled_data
+*/
 void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
              /* <<--compute-params-->> */
 	 const unsigned n_range_bins,
@@ -69,36 +74,40 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
              word_t _outbuff[SIZE_OUT_CHUNK_DATA])
 {
     int p, ix, iy;
-    const double dR_inv = 1.0/dR;
+    const float dR_inv = 1.0/dR;
 
     for (iy = 0; iy < BP_NPIX_Y; ++iy)
     {
-        const double py = (-BP_NPIX_Y/2.0 + 0.5 + iy) * dxdy;
+        const float py = (-BP_NPIX_Y/2.0 + 0.5 + iy) * dxdy;
         for (ix = 0; ix < BP_NPIX_X; ++ix)
         {
             complex accum;
-            const double px = (-BP_NPIX_X/2.0 + 0.5 + ix) * dxdy;
+            const float px = (-BP_NPIX_X/2.0 + 0.5 + ix) * dxdy;
             accum.real_part = accum.imaginary_part = 0.0f;
             for (p = 0; p < N_PULSES; ++p)
             {
                 /* calculate the range R from the platform to this pixel */
-                const double xdiff = platpos[p].x - px;
-                const double ydiff = platpos[p].y - py;
-                const double zdiff = platpos[p].z - z0;
-                const double R = sqrt(
+                // Accessing platform position data
+                const float xdiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 0] - px;
+                const float ydiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 1] - py;
+                const float zdiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 2] - z0;
+                const float R = sqrt(
                     xdiff*xdiff + ydiff*ydiff + zdiff*zdiff);
                 /* convert to a range bin index */
-                const double bin = (R-R0)*dR_inv;
+                const float bin = (R-R0)*dR_inv;
                 if (bin >= 0 && bin <= N_RANGE_UPSAMPLED-2)
                 {
                     complex sample, matched_filter, prod;
                     /* interpolation range is [bin_floor, bin_floor+1] */
                     const int bin_floor = (int) bin;
                     /* interpolation weight */
-                    const float w = (float) (bin - (double) bin_floor);
+                    const float w = (float) (bin - (float) bin_floor);
                     /* linearly interpolate to obtain a sample at bin */
-                    sample.real_part = (1.0f-w)*upsampled_data[p][bin_floor].real_part + w*upsampled_data[p][bin_floor+1].real_part;
-                    sample.imaginary_part = (1.0f-w)*upsampled_data[p][bin_floor].imaginary_part + w*upsampled_data[p][bin_floor+1].imaginary_part;
+                    //sample.real_part = (1.0f-w)*upsampled_data[p][bin_floor].real_part + w*upsampled_data[p][bin_floor+1].real_part;
+                    sample.real_part = (1.0f-w)*_inbuff[RANGE_BIN_STARTING_IDX(p)+bin_floor+0] + w*_inbuff[RANGE_BIN_STARTING_IDX(p)+bin_floor+0]; // +0: real part
+
+                    //sample.imaginary_part = (1.0f-w)*upsampled_data[p][bin_floor].imaginary_part + w*upsampled_data[p][bin_floor+1].imaginary_part;
+                    sample.imaginary_part = (1.0f-w)*_inbuff[RANGE_BIN_STARTING_IDX(p)+bin_floor+1] + w*_inbuff[RANGE_BIN_STARTING_IDX(p+1)+bin_floor+1]; // +1: imaginary part
                     /* compute the complex exponential for the matched filter */
                     matched_filter.real_part = cos(2.0 * ku * R);
                     matched_filter.imaginary_part = sin(2.0 * ku * R);
@@ -115,11 +124,7 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
         }   // End for x
     }       // End for y
 
-    // TODO implement compute functionality
-    const unsigned length = round_up(n_pulses*((n_range_bins*2)+3), VALUES_PER_WORD) / 1;
-
-    for (int i = 0; i < length; i++)
-        _outbuff[i] = _inbuff[i];
+    // const unsigned length = round_up(n_pulses*((n_range_bins*2)+3), VALUES_PER_WORD) / 1;
 }
 
 
