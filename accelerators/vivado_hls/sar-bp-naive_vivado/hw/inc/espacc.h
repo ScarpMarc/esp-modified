@@ -40,6 +40,17 @@ typedef float word_t;
 typedef ap_int<DATA_BITWIDTH> word_t;
 #endif
 
+typedef struct complex_d
+{
+	double real_part;
+	double imaginary_part;
+} complex_d_t;
+
+typedef struct position_d
+{
+	double x, y, z;
+} position_d_t;
+
 typedef struct complex
 {
 	float real_part;
@@ -115,7 +126,23 @@ const float z0 = 0.0f;
 ////////////////////////////////////////
 //	OTHER CONSTANTS
 //
-#define MAX_DIR_AND_FILENAME_LEN (1024) // From kernel
+#if INPUT_SIZE == INPUT_SIZE_SMALL
+    static const char *output_filename = "small_kernel3_output.bin";
+    static const char *golden_output_filename = "small_golden_kernel3_output.bin";
+    static const char *input_filename = "small_kernel3_input.bin";
+#elif INPUT_SIZE == INPUT_SIZE_MEDIUM
+    static const char *output_filename = "medium_kernel3_output.bin";
+    static const char *golden_output_filename = "medium_golden_kernel3_output.bin";
+    static const char *input_filename = "medium_kernel3_input.bin";
+#elif INPUT_SIZE == INPUT_SIZE_LARGE
+    static const char *output_filename = "large_kernel3_output.bin";
+    static const char *golden_output_filename = "large_golden_kernel3_output.bin";
+    static const char *input_filename = "large_kernel3_input.bin";
+#else
+    #error "Unhandled value for INPUT_SIZE"
+#endif
+// From kernel
+#define MAX_DIR_AND_FILENAME_LEN (1024) 
 
 #define N_RANGE_BINS N_RANGE
 
@@ -124,18 +151,22 @@ const float z0 = 0.0f;
 //		fc, R0, dR, platpos, upsampled_data
 
 // Start of the global elements
-#define BUFFER_PLATFORM_POS_STARTING_IDX (3)
-#define BUFFER_RANGE_BIN_STARTING_IDX (BUFFER_PLATFORM_POS_STARTING_IDX + N_PULSES * 3)
+// After fc, R0, dR
+#define BUFFER_PLATFORM_POS_STARTING_IDX 3U
+// After N_PULSES platform positions, each with 3 elements
+#define BUFFER_RANGE_BIN_STARTING_IDX (unsigned int)(BUFFER_PLATFORM_POS_STARTING_IDX + N_PULSES * 3)
 
 // Sizes
-#define SINGLE_PULSE_DATA_SIZE (N_RANGE_BINS * 2) // Complex
-#define SINGLE_PLATFORM_POS_DATA_SIZE 3			  // x, y, z
+//(N_RANGE_BINS * 2) // Complex
+#define SINGLE_PULSE_DATA_SIZE 2
+// x, y, z
+#define SINGLE_PLATFORM_POS_DATA_SIZE 3
 
 // Start of the idx-th element
 #define PARAM_FC_IDX 0
 #define PARAM_R0_IDX 1
 #define PARAM_dR_IDX 2
-#define PLATFORM_POS_STARTING_IDX(idx) BUFFER_PLATFORM_POS_STARTING_IDX + SINGLE_PLATFORM_POS_DATA_SIZE *idx
-#define RANGE_BIN_STARTING_IDX(idx) BUFFER_RANGE_BIN_STARTING_IDX + SINGLE_PULSE_DATA_SIZE *idx
+#define PLATFORM_POS_STARTING_IDX(idx) BUFFER_PLATFORM_POS_STARTING_IDX + SINGLE_PLATFORM_POS_DATA_SIZE * idx
+#define RANGE_BIN_STARTING_IDX(idx) BUFFER_RANGE_BIN_STARTING_IDX + SINGLE_PULSE_DATA_SIZE * idx
 
 #endif
