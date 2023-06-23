@@ -140,11 +140,13 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
                     const float w = (float)(bin - (float)bin_floor);
                     /* linearly interpolate to obtain a sample at bin */
                     // sample.real_part = (1.0f-w)*upsampled_data[p][bin_floor].real_part + w*upsampled_data[p][bin_floor+1].real_part;
-                    sample.real_part = (1.0f - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor + 0] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor + 0]; // +0: real part
-                    assert(RANGE_BIN_STARTING_IDX(p) + bin_floor + 0 < _size_in_chunk_data);
+
+                    // This looks really convoluted but it's just summing two consecutive elements, which have size COMPLEX_DATA_SIZE
+                    sample.real_part = (1.0f - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET]; // +0: real part
+                    assert(RANGE_BIN_STARTING_IDX(p) + bin_floor + 1 * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET < _size_in_chunk_data);
 
                     // sample.imaginary_part = (1.0f-w)*upsampled_data[p][bin_floor].imaginary_part + w*upsampled_data[p][bin_floor+1].imaginary_part;
-                    sample.imaginary_part = (1.0f - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor + 1] + w * _inbuff[RANGE_BIN_STARTING_IDX(p + 1) + bin_floor + 1]; // +1: imaginary part
+                    sample.imaginary_part = (1.0f - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET]; // +1: imaginary part
                     assert(RANGE_BIN_STARTING_IDX(p) + bin_floor + 1 < _size_in_chunk_data);
                     /* compute the complex exponential for the matched filter */
                     matched_filter.real_part = cos(2.0 * ku * R);

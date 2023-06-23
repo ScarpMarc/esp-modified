@@ -151,6 +151,10 @@ const double large_signal_to_noise_ratio = 140.0;
 #define SINGLE_PULSE_DATA_SIZE 2 * N_RANGE_UPSAMPLED
 // x, y, z
 #define SINGLE_PLATFORM_POS_DATA_SIZE 3
+// Amount of words in data struct (this only exists to avoid having magic numbers arounds)
+#define COMPLEX_DATA_SIZE 2
+#define COMPLEX_REAL_OFFSET 0
+#define COMPLEX_IMAGINARY_OFFSET 1
 
 // Start of the idx-th element
 #define PARAM_FC_IDX 0

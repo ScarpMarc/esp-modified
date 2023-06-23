@@ -18,4 +18,6 @@ complex cmult(complex lhs, complex rhs);
 //void reshape_data_to_fpga_format(word_t *inout_data);
 //void reshape_data_to_original_format(word_t *inout_data);
 
+extern long long unsigned int total_sim_duration;
+
 #endif

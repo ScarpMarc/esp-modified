@@ -10,13 +10,17 @@
 #include <cmath>
 #include <unistd.h>
 
+#include <chrono>
+
 #include <unistd.h>
 
 #include <filesystem>
 
+long long unsigned int total_sim_duration;
+
 /**
  * @brief Calculate signal-to-noise ratio in dB to compare our output with the golden one
- * 
+ *
  * @param reference Golden image
  * @param test Our generated image
  * @param num_elements Amount of values to compare
@@ -42,23 +46,23 @@ double calculate_snr(
 
     if (den == 0)
     {
-        /* 
+        /*
          * The test and reference sets are identical. Just
          * return a large number (in dB) rather than +infinity.
-         * 
+         *
          * THIS IS A CONSTANT DEFINED IN espacc.h
          */
         return large_signal_to_noise_ratio;
     }
     else
     {
-        return 10.0*log10(num/den);
+        return 10.0 * log10(num / den);
     }
 }
 
 /**
  * @brief Used for reading the golden output data file
- * 
+ *
  * @param data Output array
  * @param filename Target file name
  * @param directory Directory name
@@ -87,7 +91,7 @@ void read_data_file(
     if (fp == NULL)
     {
         fprintf(stderr, "Error: Unable to open golden input file %s for reading.\n",
-            dir_and_filename);
+                dir_and_filename);
         exit(EXIT_FAILURE);
     }
 
@@ -95,18 +99,18 @@ void read_data_file(
     if (nread != num_bytes)
     {
         fprintf(stderr, "Error: read failure on %s. "
-            "Expected %lu bytes, but only read %lu.\n",
-            dir_and_filename, num_bytes, nread);
+                        "Expected %lu bytes, but only read %lu.\n",
+                dir_and_filename, num_bytes, nread);
         fclose(fp);
         exit(EXIT_FAILURE);
-    }        
+    }
 
     fclose(fp);
 }
 
 /**
  * @brief Used for reading the input data file
- * 
+ *
  * @param input_filename Input file name
  * @param input_directory Input directory
  * @param buffer Buffer to store the data
@@ -115,10 +119,10 @@ void read_bp_data_file(
     const char *input_filename,
     const char *input_directory,
     float *buffer
-    //float *fc,
-    //float *R0,
-    //float *dR
-    )
+    // float *fc,
+    // float *R0,
+    // float *dR
+)
 {
     FILE *fp = NULL;
     const size_t num_data_elements = N_RANGE_UPSAMPLED * N_PULSES;
@@ -128,9 +132,9 @@ void read_bp_data_file(
     assert(input_filename != NULL);
     assert(input_directory != NULL);
     assert(buffer != NULL);
-    //assert(fc != NULL);
-    //assert(R0 != NULL);
-    //assert(dR != NULL);
+    // assert(fc != NULL);
+    // assert(R0 != NULL);
+    // assert(dR != NULL);
 
     double fc_d;
     double R0_d;
@@ -296,11 +300,11 @@ int main(int argc, char **argv)
     dma_info_t load;
     dma_info_t store;
 
-    #ifndef NDEBUG
-        _buffer_size = in_size;
-        _dma_size = dma_size;
-        _dma_in_size = dma_in_size;
-    #endif
+#ifndef NDEBUG
+    _buffer_size = in_size;
+    _dma_size = dma_size;
+    _dma_in_size = dma_in_size;
+#endif
 
     /*read_bp_data_file(
     const char *input_filename,
@@ -310,7 +314,7 @@ int main(int argc, char **argv)
     double *R0,
     double *dR)*/
     printf("Attempting to read data file...\n");
-    //printf("Input buffer size (bytes): %x\n", in_size * sizeof(word_t));
+    // printf("Input buffer size (bytes): %x\n", in_size * sizeof(word_t));
 
     read_bp_data_file(
         input_filename,
@@ -319,20 +323,22 @@ int main(int argc, char **argv)
         //&fc,
         //&R0,
         //&dR
-        );
+    );
     printf("Data file read successfully.\n");
     fflush(stdout);
-    
-    for(unsigned i = 0; i < dma_in_size; i++)
+
+    for (unsigned i = 0; i < dma_in_size; i++)
     {
-        for(unsigned k = 0; k < VALUES_PER_WORD; k++)
+        for (unsigned k = 0; k < VALUES_PER_WORD; k++)
         {
             mem[i].word[k] = inbuff[i * VALUES_PER_WORD + k];
             assert(i * VALUES_PER_WORD + k < in_size);
         }
     }
-	printf("Generated input buffer.\n");
+    printf("Generated input buffer.\n");
     fflush(stdout);
+
+    auto top_start = std::chrono::high_resolution_clock::now();
 
     // Call the TOP function
     top(mem, mem,
@@ -341,6 +347,13 @@ int main(int argc, char **argv)
         out_size,
         n_pulses,
         load, store);
+
+    auto top_end = std::chrono::high_resolution_clock::now();
+    total_sim_duration = std::chrono::duration_cast<std::chrono::microseconds>(top_end - top_start).count() / 1000; // Milliseconds
+
+    printf("Top function took %llu ms\n", total_sim_duration);
+
+    // long long unsigned int total_sim_duration
 
     // Validate
     uint32_t out_offset = dma_in_size;
@@ -358,21 +371,22 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     read_data_file(
-        (char *) outbuff_gold,
+        (char *)outbuff_gold,
         golden_output_filename,
         "/home/marco/Repos/ACAProject2022-2023/inout/",
-        sizeof(complex)*(out_size * out_size));    
+        sizeof(complex) * (out_size * out_size));
 
     printf("Comparing outputs...\n");
-    fflush(stdout);        
+    fflush(stdout);
 
     double snr = calculate_snr(
-            (complex *) outbuff,
-            (complex *) outbuff_gold,
-            (out_size * out_size));
+        (complex *)outbuff,
+        (complex *)outbuff_gold,
+        (out_size * out_size));
     printf("\nImage correctness SNR: %.2f\n", snr);
 
-    if(snr < min_valid_signal_to_noise_ratio) errors = 1;
+    if (snr < min_valid_signal_to_noise_ratio)
+        errors = 1;
 
     if (errors)
         std::cout << "Test FAILED with " << errors << " errors." << std::endl;
@@ -381,7 +395,7 @@ int main(int argc, char **argv)
 
     // Free memory
 
-    //free(mem);
+    // free(mem);
     free(inbuff);
     free(outbuff);
     free(outbuff_gold);
