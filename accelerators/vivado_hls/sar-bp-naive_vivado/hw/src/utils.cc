@@ -1,4 +1,8 @@
 #include "../inc/utils.h"
+#include <cassert>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 complex cconj(complex x)
 {

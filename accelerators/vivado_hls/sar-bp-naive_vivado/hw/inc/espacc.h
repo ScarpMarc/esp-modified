@@ -40,12 +40,6 @@ typedef float word_t;
 typedef ap_int<DATA_BITWIDTH> word_t;
 #endif
 
-typedef struct complex_d
-{
-	double real_part;
-	double imaginary_part;
-} complex_d_t;
-
 typedef struct position_d
 {
 	double x, y, z;
@@ -106,14 +100,6 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
 			 word_t _outbuff[SIZE_OUT_CHUNK_DATA]);
 
 ////////////////////////////////////////
-//	IMPLEMENTATION CONSTANTS
-//		TO BE READ FROM FILE
-//		(Defined in tb.cc for linker reasons)
-extern float fc, dR, R0;
-extern float dxdy; // = dR;
-extern float ku;	// = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
-
-////////////////////////////////////////
 //	PHYSICAL CONSTANTS
 //
 #define SPEED_OF_LIGHT (3.0e8)
@@ -122,6 +108,10 @@ extern float ku;	// = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
 //	IMPLEMENTATION CONSTANTS
 //
 const float z0 = 0.0f;
+// Minimum signal-to-noise ratio w.r.t. the golden output to consider the test passed.
+const double min_valid_signal_to_noise_ratio = 100.0;
+// "Large" signal-to-noise ratio returned when the outputs are "equal".
+const double large_signal_to_noise_ratio = 140.0;
 
 ////////////////////////////////////////
 //	OTHER CONSTANTS
@@ -152,13 +142,13 @@ const float z0 = 0.0f;
 
 // Start of the global elements
 // After fc, R0, dR
-#define BUFFER_PLATFORM_POS_STARTING_IDX 3U
+#define BUFFER_PLATFORM_POS_STARTING_IDX (unsigned int)3
 // After N_PULSES platform positions, each with 3 elements
-#define BUFFER_RANGE_BIN_STARTING_IDX (unsigned int)(BUFFER_PLATFORM_POS_STARTING_IDX + N_PULSES * 3)
+#define BUFFER_RANGE_BIN_STARTING_IDX (unsigned int)(BUFFER_PLATFORM_POS_STARTING_IDX + (unsigned int)N_PULSES * SINGLE_PLATFORM_POS_DATA_SIZE)
 
 // Sizes
 //(N_RANGE_BINS * 2) // Complex
-#define SINGLE_PULSE_DATA_SIZE 2
+#define SINGLE_PULSE_DATA_SIZE 2 * N_RANGE_UPSAMPLED
 // x, y, z
 #define SINGLE_PLATFORM_POS_DATA_SIZE 3
 
@@ -168,5 +158,15 @@ const float z0 = 0.0f;
 #define PARAM_dR_IDX 2
 #define PLATFORM_POS_STARTING_IDX(idx) BUFFER_PLATFORM_POS_STARTING_IDX + SINGLE_PLATFORM_POS_DATA_SIZE * idx
 #define RANGE_BIN_STARTING_IDX(idx) BUFFER_RANGE_BIN_STARTING_IDX + SINGLE_PULSE_DATA_SIZE * idx
+
+
+#ifndef NDEBUG
+    extern unsigned int _buffer_d_size;
+    extern unsigned int _buffer_size;
+	extern unsigned int _size_in_chunk_data;
+	extern unsigned int _size_out_chunk_data;
+	extern unsigned int _dma_size;
+	extern unsigned int _dma_in_size;
+#endif
 
 #endif

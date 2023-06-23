@@ -69,6 +69,12 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "nnls": "cpp"
+        "nnls": "cpp",
+        "strstream": "cpp",
+        "cfenv": "cpp",
+        "unordered_set": "cpp",
+        "netfwd": "cpp",
+        "hash_map": "cpp",
+        "valarray": "cpp"
     }
 }

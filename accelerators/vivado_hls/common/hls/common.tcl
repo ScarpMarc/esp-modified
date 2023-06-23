@@ -37,6 +37,8 @@ foreach dma $dma_width {
 
 	open_solution "${ACCELERATOR}_acc"
 
+	config_debug -enable=false
+
 	create_clock -period $clock_period -name default
 
 	if {[lsearch $fpga_techs $TECH] >= 0} {
@@ -62,14 +64,16 @@ foreach dma $dma_width {
 
 	# Config HLS
 	if {$datatype eq ""} {
-	    config_rtl -prefix "${ACCELERATOR}_dma${dma}_w${width}_"
+	    config_rtl -module_prefix "${ACCELERATOR}_dma${dma}_w${width}_"
 	} else {
-	    config_rtl -prefix "${ACCELERATOR}_dma${dma}_w${width}_${datatype}_"
+	    config_rtl -module_prefix "${ACCELERATOR}_dma${dma}_w${width}_${datatype}_"
 	}
 	config_compile -no_signed_zeros=0 -unsafe_math_optimizations=0
 	config_schedule -effort medium -relax_ii_for_timing=0 -verbose=0
 	config_bind -effort medium
-	config_sdx -optimization_level none -target none
+	config_export -vivado_optimization_level=2 
+	config_flow -target=vivado
+	# open_solution sar-bp-naive_vivado_dma32_w32 -flow_target vitis 
 	set_clock_uncertainty 12.5%
 
 	# Directives

@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/tools/Xilinx/Vitis_HLS/2022.2/include/**"
+                "/tools/Xilinx/Vitis_HLS/2022.2/include/**",
+                "/home/marco/Repos/esp-modified/accelerators/vivado_hls/sar-bp-naive_vivado/hw/inc/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
