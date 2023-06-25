@@ -36,12 +36,12 @@ double calculate_snr(
 
     for (i = 0; i < num_elements; ++i)
     {
-        den += (reference[i].real_part - test[i].real_part) *
-               (reference[i].real_part - test[i].real_part);
-        den += (reference[i].imaginary_part - test[i].imaginary_part) *
-               (reference[i].imaginary_part - test[i].imaginary_part);
-        num += reference[i].real_part * reference[i].real_part +
-               reference[i].imaginary_part * reference[i].imaginary_part;
+        den += (double)((reference[i].real_part - test[i].real_part) *
+               (reference[i].real_part - test[i].real_part));
+        den += (double)((reference[i].imaginary_part - test[i].imaginary_part) *
+               (reference[i].imaginary_part - test[i].imaginary_part));
+        num += (double)(reference[i].real_part * reference[i].real_part +
+               reference[i].imaginary_part * reference[i].imaginary_part);
     }
 
     if (den == 0)
@@ -118,7 +118,7 @@ void read_data_file(
 void read_bp_data_file(
     const char *input_filename,
     const char *input_directory,
-    float *buffer
+    word_t *buffer
     // float *fc,
     // float *R0,
     // float *dR
@@ -174,7 +174,7 @@ void read_bp_data_file(
         exit(EXIT_FAILURE);
     }
 
-    buffer[PARAM_FC_IDX] = (float)fc_d;
+    buffer[PARAM_FC_IDX] = (word_t)fc_d;
 
     printf("Reading R0\n");
     fflush(stdout);
@@ -186,7 +186,7 @@ void read_bp_data_file(
         exit(EXIT_FAILURE);
     }
 
-    buffer[PARAM_R0_IDX] = (float)R0_d;
+    buffer[PARAM_R0_IDX] = (word_t)R0_d;
 
     printf("Reading dR\n");
     fflush(stdout);
@@ -198,7 +198,7 @@ void read_bp_data_file(
         exit(EXIT_FAILURE);
     }
 
-    buffer[PARAM_dR_IDX] = (float)dR_d;
+    buffer[PARAM_dR_IDX] = (word_t)dR_d;
 
     printf("Reading position data\n");
     fflush(stdout);
@@ -215,7 +215,7 @@ void read_bp_data_file(
     {
         for (unsigned int j = 0; j < 3; ++j)
         {
-            buffer[PLATFORM_POS_STARTING_IDX(i) + j] = (float)buffer_d[SINGLE_PLATFORM_POS_DATA_SIZE * (i) + j];
+            buffer[PLATFORM_POS_STARTING_IDX(i) + j] = (word_t)buffer_d[SINGLE_PLATFORM_POS_DATA_SIZE * (i) + j];
             assert(SINGLE_PLATFORM_POS_DATA_SIZE * (i) + j < _buffer_d_size);
             assert(PLATFORM_POS_STARTING_IDX(i) + j < _buffer_size);
         }
@@ -255,6 +255,7 @@ int main(int argc, char **argv)
 #ifndef NDEBUG
     printf("--- DEBUG MODE ---\n");
 #endif
+    printf("Data bitwidth: %ud\n", DATA_BITWIDTH);
     fflush(stdout);
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != NULL)

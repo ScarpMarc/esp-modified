@@ -28,6 +28,7 @@
 // data word
 #if (IS_TYPE_FIXED_POINT == 1)
 typedef ap_fixed<DATA_BITWIDTH, DATA_BITWIDTH - FRAC_BITS> word_t;
+typedef ap_fixed<DATA_BITWIDTH / 2, (DATA_BITWIDTH - FRAC_BITS) / 2> half_word_t;
 #elif (IS_TYPE_UINT == 1)
 typedef ap_uint<DATA_BITWIDTH> word_t;
 #elif (IS_TYPE_FLOAT == 1)
@@ -39,22 +40,6 @@ typedef float word_t;
 #else // (IS_TYPE_INT == 1)
 typedef ap_int<DATA_BITWIDTH> word_t;
 #endif
-
-typedef struct position_d
-{
-	double x, y, z;
-} position_d_t;
-
-typedef struct complex
-{
-	float real_part;
-	float imaginary_part;
-} complex_t;
-
-typedef struct position
-{
-	float x, y, z;
-} position_t;
 
 typedef struct dma_word
 {
@@ -72,6 +57,23 @@ typedef struct dma_info
 	ap_uint<32> size;
 } dma_info_t;
 
+typedef struct position_d
+{
+	double x, y, z;
+} position_d_t;
+
+typedef struct complex
+{
+	word_t real_part;
+	word_t imaginary_part;
+} complex_t;
+
+typedef struct position
+{
+	word_t x, y, z;
+} position_t;
+
+
 // The 'size' variable of 'dma_info' indicates the bit-width of the words
 // processed by the accelerator. Here are the encodings:
 #define SIZE_BYTE 0
@@ -79,15 +81,15 @@ typedef struct dma_info
 #define SIZE_WORD 2
 #define SIZE_DWORD 3
 
-#if (DATA_BITWIDTH == 8)
-#define SIZE_WORD_T SIZE_BYTE
-#elif (DATA_BITWIDTH == 16)
-#define SIZE_WORD_T SIZE_HWORD
-#elif (DATA_BITWIDTH == 32)
-#define SIZE_WORD_T SIZE_WORD
-#else // if (DATA_BITWIDTH == 64)
+//*#if (DATA_BITWIDTH == 8)
+//*#define SIZE_WORD_T SIZE_BYTE
+//*#elif (DATA_BITWIDTH == 16)
+//*#define SIZE_WORD_T SIZE_HWORD
+//*#elif (DATA_BITWIDTH == 32)
+//*#define SIZE_WORD_T SIZE_WORD
+//*#else // if (DATA_BITWIDTH == 64)
 #define SIZE_WORD_T SIZE_DWORD
-#endif
+//#endif
 
 void top(dma_word_t *out, dma_word_t *in1,
 		 /* <<--params-->> */
@@ -107,7 +109,7 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
 ////////////////////////////////////////
 //	IMPLEMENTATION CONSTANTS
 //
-const float z0 = 0.0f;
+const word_t z0 = 0.0f;
 // Minimum signal-to-noise ratio w.r.t. the golden output to consider the test passed.
 const double min_valid_signal_to_noise_ratio = 100.0;
 // "Large" signal-to-noise ratio returned when the outputs are "equal".

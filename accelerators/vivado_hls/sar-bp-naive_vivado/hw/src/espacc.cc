@@ -97,60 +97,60 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
     printf("Now computing\n");
     fflush(stdout);
 
-    float fc = _inbuff[PARAM_FC_IDX];
-    float R0 = _inbuff[PARAM_R0_IDX];
-    float dR = _inbuff[PARAM_dR_IDX];
-    float dxdy; // = dR;
-    float ku;   // = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
+    word_t fc = _inbuff[PARAM_FC_IDX];
+    word_t R0 = _inbuff[PARAM_R0_IDX];
+    word_t dR = _inbuff[PARAM_dR_IDX];
+    word_t dxdy; // = dR;
+    word_t ku;   // = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
     dxdy = dR;
     dR /= RANGE_UPSAMPLE_FACTOR;
-    ku = 2.0 * M_PI * fc / SPEED_OF_LIGHT;
+    ku = (word_t)2.0 * (word_t)M_PI * (word_t)((double)fc / SPEED_OF_LIGHT);
 
     int p, ix, iy;
-    const float dR_inv = 1.0 / dR;
+    const word_t dR_inv = (word_t)1.0 / dR;
 
     for (iy = 0; iy < BP_NPIX_Y; ++iy)
     {
-        const float py = (-BP_NPIX_Y / 2.0 + 0.5 + iy) * dxdy;
+        const word_t py = (word_t)(-BP_NPIX_Y / 2.0 + 0.5 + iy) * dxdy;
         for (ix = 0; ix < BP_NPIX_X; ++ix)
         {
             complex accum;
-            const float px = (-BP_NPIX_X / 2.0 + 0.5 + ix) * dxdy;
+            const word_t px = (word_t)(-BP_NPIX_X / 2.0 + 0.5 + ix) * dxdy;
             accum.real_part = accum.imaginary_part = 0.0f;
             for (p = 0; p < N_PULSES; ++p)
             {
                 /* calculate the range R from the platform to this pixel */
                 // Accessing platform position data
-                const float xdiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 0] - px;
-                const float ydiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 1] - py;
-                const float zdiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 2] - z0;
+                const word_t xdiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 0] - px;
+                const word_t ydiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 1] - py;
+                const word_t zdiff = _inbuff[PLATFORM_POS_STARTING_IDX(p) + 2] - z0;
                 assert(PLATFORM_POS_STARTING_IDX(p) + 0 < _size_in_chunk_data);
                 assert(PLATFORM_POS_STARTING_IDX(p) + 1 < _size_in_chunk_data);
                 assert(PLATFORM_POS_STARTING_IDX(p) + 2 < _size_in_chunk_data);
-                const float R = sqrt(
+                const word_t R = sqrt(
                     xdiff * xdiff + ydiff * ydiff + zdiff * zdiff);
                 /* convert to a range bin index */
-                const float bin = (R - R0) * dR_inv;
+                const word_t bin = (R - R0) * dR_inv;
                 if (bin >= 0 && bin <= N_RANGE_UPSAMPLED - 2)
                 {
                     complex sample, matched_filter, prod;
                     /* interpolation range is [bin_floor, bin_floor+1] */
                     const int bin_floor = (int)bin;
                     /* interpolation weight */
-                    const float w = (float)(bin - (float)bin_floor);
+                    const word_t w = (word_t)(bin - (word_t)bin_floor);
                     /* linearly interpolate to obtain a sample at bin */
                     // sample.real_part = (1.0f-w)*upsampled_data[p][bin_floor].real_part + w*upsampled_data[p][bin_floor+1].real_part;
 
                     // This looks really convoluted but it's just summing two consecutive elements, which have size COMPLEX_DATA_SIZE
-                    sample.real_part = (1.0f - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET]; // +0: real part
+                    sample.real_part = ((word_t)1.0 - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET]; // +0: real part
                     assert(RANGE_BIN_STARTING_IDX(p) + bin_floor + 1 * COMPLEX_DATA_SIZE + COMPLEX_REAL_OFFSET < _size_in_chunk_data);
 
                     // sample.imaginary_part = (1.0f-w)*upsampled_data[p][bin_floor].imaginary_part + w*upsampled_data[p][bin_floor+1].imaginary_part;
-                    sample.imaginary_part = (1.0f - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET]; // +1: imaginary part
+                    sample.imaginary_part = ((word_t)1.0 - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET]; // +1: imaginary part
                     assert(RANGE_BIN_STARTING_IDX(p) + bin_floor + 1 < _size_in_chunk_data);
                     /* compute the complex exponential for the matched filter */
-                    matched_filter.real_part = cos(2.0 * ku * R);
-                    matched_filter.imaginary_part = sin(2.0 * ku * R);
+                    matched_filter.real_part = cos((word_t)2.0 * ku * R);
+                    matched_filter.imaginary_part = sin((word_t)2.0 * ku * R);
                     /* scale the interpolated sample by the matched filter */
                     prod = cmult(sample, matched_filter);
                     /* accumulate this pulse's contribution into the pixel */
