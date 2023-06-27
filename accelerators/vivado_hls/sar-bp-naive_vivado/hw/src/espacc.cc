@@ -149,8 +149,8 @@ void compute(word_t _inbuff[SIZE_IN_CHUNK_DATA],
                     sample.imaginary_part = ((word_t)1.0 - w) * _inbuff[RANGE_BIN_STARTING_IDX(p) + bin_floor * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET] + w * _inbuff[RANGE_BIN_STARTING_IDX(p) + (bin_floor + 1) * COMPLEX_DATA_SIZE + COMPLEX_IMAGINARY_OFFSET]; // +1: imaginary part
                     assert(RANGE_BIN_STARTING_IDX(p) + bin_floor + 1 < _size_in_chunk_data);
                     /* compute the complex exponential for the matched filter */
-                    matched_filter.real_part = cos((word_t)2.0 * ku * R);
-                    matched_filter.imaginary_part = sin((word_t)2.0 * ku * R);
+                    matched_filter.real_part = hls::cos((word_t)2.0 * ku * R);
+                    matched_filter.imaginary_part = hls::sin((word_t)2.0 * ku * R);
                     /* scale the interpolated sample by the matched filter */
                     prod = cmult(sample, matched_filter);
                     /* accumulate this pulse's contribution into the pixel */
