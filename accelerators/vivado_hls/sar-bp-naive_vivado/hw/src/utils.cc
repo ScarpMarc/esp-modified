@@ -7,13 +7,28 @@
 complex cconj(complex x)
 {
     complex xconj = x;
-    xconj.imaginary_part *= -1.0f;
+    xconj.imaginary_part = -xconj.imaginary_part;
+    return xconj;
+}
+
+complex_d cconj(complex_d x)
+{
+    complex_d xconj = x;
+    xconj.imaginary_part = -xconj.imaginary_part;
     return xconj;
 }
 
 complex cmult(complex lhs, complex rhs)
 {
     complex prod;
+    prod.real_part = lhs.real_part * rhs.real_part - lhs.imaginary_part * rhs.imaginary_part;
+    prod.imaginary_part = lhs.real_part * rhs.imaginary_part + lhs.imaginary_part * rhs.real_part;
+    return prod;
+}
+
+complex_d cmult(complex_d lhs, complex_d rhs)
+{
+    complex_d prod;
     prod.real_part = lhs.real_part * rhs.real_part - lhs.imaginary_part * rhs.imaginary_part;
     prod.imaginary_part = lhs.real_part * rhs.imaginary_part + lhs.imaginary_part * rhs.real_part;
     return prod;

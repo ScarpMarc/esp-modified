@@ -251,7 +251,7 @@ void read_bp_data_file(
 int main(int argc, char **argv)
 {
 
-    printf("****start*****\n");
+   printf("****start*****\n");
 #ifndef NDEBUG
     printf("--- DEBUG MODE ---\n");
 #endif
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
     uint32_t dma_out_size;
     uint32_t dma_size;
 
-    in_words_adj = round_up(n_pulses * ((n_range_bins * 2) + 3) + 3, VALUES_PER_WORD);
+    in_words_adj = round_up(BUFFER_PLATFORM_POS_STARTING_IDX + n_pulses * ((n_range_bins * 2) + 3), VALUES_PER_WORD);
     out_words_adj = round_up(2 * out_size * out_size, VALUES_PER_WORD);
     in_size = in_words_adj * (1);
     out_size_ = out_words_adj * (1);
@@ -327,6 +327,18 @@ int main(int argc, char **argv)
     printf("Data file read successfully.\n");
     fflush(stdout);
 
+    printf("Reading golden output.\n");
+    fflush(stdout);
+
+    read_data_file(
+        (char *)outbuff_gold,
+        golden_output_filename,
+        "/home/marco/Repos/ACAProject2022-2023/inout/",
+        sizeof(complex) * (out_size * out_size));
+
+    printf("Golden output file read successfully.\n");
+    fflush(stdout);    
+
     for (unsigned i = 0; i < dma_in_size; i++)
     {
         for (unsigned k = 0; k < VALUES_PER_WORD; k++)
@@ -367,21 +379,12 @@ int main(int argc, char **argv)
             if (outbuff[i * out_words_adj + j] != outbuff_gold[i * out_words_adj + j])
                 errors++;*/
 
-    printf("Reading golden output.\n");
-    fflush(stdout);
-
-    read_data_file(
-        (char *)outbuff_gold,
-        golden_output_filename,
-        "/home/marco/Repos/ACAProject2022-2023/inout/",
-        sizeof(complex) * (out_size * out_size));
-
     printf("Comparing outputs...\n");
     fflush(stdout);
 
     double snr = calculate_snr(
-        (complex *)outbuff,
         (complex *)outbuff_gold,
+        (complex *)outbuff,
         (out_size * out_size));
     printf("\nImage correctness SNR: %.2f\n", snr);
 

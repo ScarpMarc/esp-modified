@@ -51,6 +51,12 @@ typedef struct complex
 	float imaginary_part;
 } complex_t;
 
+typedef struct complex_d
+{
+	double real_part;
+	double imaginary_part;
+} complex_d_t;
+
 typedef struct position
 {
 	float x, y, z;

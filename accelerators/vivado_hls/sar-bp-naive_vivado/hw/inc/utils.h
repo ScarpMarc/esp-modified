@@ -15,6 +15,12 @@ complex cconj(complex x);
 /* complex multiplication */
 complex cmult(complex lhs, complex rhs);
 
+/* complex conjugate */
+complex_d cconj(complex_d x);
+
+/* complex multiplication */
+complex_d cmult(complex_d lhs, complex_d rhs);
+
 //void reshape_data_to_fpga_format(word_t *inout_data);
 //void reshape_data_to_original_format(word_t *inout_data);
 
